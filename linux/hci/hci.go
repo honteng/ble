@@ -39,7 +39,7 @@ func NewHCI(opts ...Option) (*HCI, error) {
 		id: -1,
 
 		chCmdPkt:  make(chan *pkt),
-		chCmdBufs: make(chan []byte, 8),
+		chCmdBufs: make(chan []byte, 16),
 		sent:      make(map[int]*pkt),
 
 		evth: map[int]handlerFn{},
@@ -274,8 +274,10 @@ func (h *HCI) sktLoop() {
 		p := make([]byte, n)
 		copy(p, b)
 		if err := h.handlePkt(p); err != nil {
-			h.err = fmt.Errorf("skt: %s", err)
-			return
+			// TODO: don't do this!!
+			//h.err = fmt.Errorf("skt: %s", err)
+			//return
+			logger.Warn("%v", err)
 		}
 	}
 }
@@ -402,12 +404,13 @@ func (h *HCI) handleCommandComplete(b []byte) error {
 
 	// NOP command, used for flow control purpose [Vol 2, Part E, 4.4]
 	if e.CommandOpcode() == 0x0000 {
-		h.chCmdBufs = make(chan []byte, 8)
+		h.chCmdBufs = make(chan []byte, 16)
 		return nil
 	}
 	p, found := h.sent[int(e.CommandOpcode())]
 	if !found {
-		return fmt.Errorf("can't find the cmd for CommandCompleteEP: % X", e)
+		logger.Warn("can't find the cmd for CommandCompleteEP: % X", e)
+		return nil
 	}
 	p.done <- e.ReturnParameters()
 	return nil
@@ -421,7 +424,8 @@ func (h *HCI) handleCommandStatus(b []byte) error {
 
 	p, found := h.sent[int(e.CommandOpcode())]
 	if !found {
-		return fmt.Errorf("can't find the cmd for CommandStatusEP: % X", e)
+		logger.Warn("can't find the cmd for CommandCompleteEP: % X", e)
+		return nil
 	}
 	p.done <- []byte{e.Status()}
 	return nil
@@ -478,7 +482,6 @@ func (h *HCI) handleDisconnectionComplete(b []byte) error {
 		return fmt.Errorf("disconnecting an invalid handle %04X", e.ConnectionHandle())
 	}
 	close(c.chInPkt)
-
 	if c.param.Role() == roleMaster {
 		// Re-enable advertising, if it was advertising. Refer to the
 		// handleLEConnectionComplete() for details.

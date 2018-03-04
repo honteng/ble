@@ -39,7 +39,7 @@ func NewClient(l2c ble.Conn, h NotificationHandler) *Client {
 	return c
 }
 
-// ExchangeMTU informs the server of the client’s maximum receive MTU size and
+// ExchangeMTU informs the server of the client's maximum receive MTU size and
 // request the server to respond with its maximum receive MTU size. [Vol 3, Part F, 3.4.2.1]
 func (c *Client) ExchangeMTU(clientRxMTU int) (serverRxMTU int, err error) {
 	if clientRxMTU < ble.DefaultMTU || clientRxMTU > ble.MaxMTU {

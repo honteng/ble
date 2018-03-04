@@ -266,7 +266,7 @@ func (p *Client) ReadRSSI() int {
 	return 0
 }
 
-// ExchangeMTU informs the server of the client’s maximum receive MTU size and
+// ExchangeMTU informs the server of the client's maximum receive MTU size and
 // request the server to respond with its maximum receive MTU size. [Vol 3, Part F, 3.4.2.1]
 func (p *Client) ExchangeMTU(mtu int) (int, error) {
 	p.Lock()
