@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -274,7 +275,14 @@ func (h *HCI) sktLoop() {
 		p := make([]byte, n)
 		copy(p, b)
 		if err := h.handlePkt(p); err != nil {
-			logger.Error("skt: %s%v", err)
+			// Some bluetooth devices may append vendor specific packets at the last,
+			// in this case, simply ignore them.
+			if strings.HasPrefix(err.Error(), "unsupported vendor packet:") {
+				logger.Error("skt: %v", err)
+			} else {
+				h.err = fmt.Errorf("skt: %v", err)
+				return
+			}
 		}
 	}
 }
