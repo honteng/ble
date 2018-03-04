@@ -274,10 +274,7 @@ func (h *HCI) sktLoop() {
 		p := make([]byte, n)
 		copy(p, b)
 		if err := h.handlePkt(p); err != nil {
-			// TODO: don't do this!!
-			//h.err = fmt.Errorf("skt: %s", err)
-			//return
-			logger.Warn("%v", err)
+			logger.Error("skt: %s%v", err)
 		}
 	}
 }
@@ -409,8 +406,7 @@ func (h *HCI) handleCommandComplete(b []byte) error {
 	}
 	p, found := h.sent[int(e.CommandOpcode())]
 	if !found {
-		logger.Warn("can't find the cmd for CommandCompleteEP: % X", e)
-		return nil
+		return fmt.Errorf("can't find the cmd for CommandCompleteEP: % X", e)
 	}
 	p.done <- e.ReturnParameters()
 	return nil
@@ -424,8 +420,7 @@ func (h *HCI) handleCommandStatus(b []byte) error {
 
 	p, found := h.sent[int(e.CommandOpcode())]
 	if !found {
-		logger.Warn("can't find the cmd for CommandCompleteEP: % X", e)
-		return nil
+		return fmt.Errorf("can't find the cmd for CommandStatusEP: % X", e)
 	}
 	p.done <- []byte{e.Status()}
 	return nil
@@ -482,6 +477,7 @@ func (h *HCI) handleDisconnectionComplete(b []byte) error {
 		return fmt.Errorf("disconnecting an invalid handle %04X", e.ConnectionHandle())
 	}
 	close(c.chInPkt)
+
 	if c.param.Role() == roleMaster {
 		// Re-enable advertising, if it was advertising. Refer to the
 		// handleLEConnectionComplete() for details.
