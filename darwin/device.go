@@ -510,8 +510,14 @@ func (d *Device) HandleXpcEvent(event xpc.Dict, err error) {
 
 		sub := c.subs[uint16(args.characteristicHandle())]
 		if sub == nil {
-			log.Printf("notified by unsubscribed handle")
+			log.Printf("notified by unsubscribed handle: %d", uint16(args.characteristicHandle()))
 			// FIXME: should terminate the connection?
+			// read handle binding is not good.
+			// refer to noble/lib/mac/yosemite.js
+			// the sync call is only for the backward compatiblity?
+			// See characteristics.js
+			fmt.Printf("%#v\n", m)
+			d.conn(args).rspc <- m
 		} else {
 			sub.fn(args.data())
 		}
